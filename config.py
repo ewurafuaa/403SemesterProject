@@ -1,0 +1,5 @@
+STUDENT_JID = "student@localhost"
+TASK_JID = "task@localhost"
+PRIORITY_JID = "priority@localhost"
+REMINDER_JID = "reminder@localhost"
+PASSWORD = "password123"
