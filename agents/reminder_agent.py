@@ -17,13 +17,16 @@ class ReminderAgent(Agent):
             if not msg:
                 return
 
-            data = parse_message(msg)
             if msg.get_metadata("msg_type") != "priority_update":
                 return
 
+            data = parse_message(msg)
             task_id = data["task_id"]
+            title = data["title"]
+            course = data["course"]
             priority = data["priority"]
             status = data["status"]
+            time_remaining = data["time_remaining"]
 
             if status == "submitted":
                 if self.agent.last_sent.get(task_id) != "submitted":
@@ -31,25 +34,28 @@ class ReminderAgent(Agent):
                         STUDENT_JID,
                         "inform",
                         "student_notice",
-                        {"text": f"Task '{data['title']}' completed. Reminders stopped."}
+                        {
+                            "text": f"Task '{title}' has been marked as completed. No further reminders will be sent."
+                        }
                     ))
+                    print(f"[ReminderAgent] Reminders stopped for task {task_id} because it has been completed.")
                     self.agent.last_sent[task_id] = "submitted"
                 return
 
-            if self.agent.last_sent.get(task_id) != priority:
-                text = reminder_text(
-                    data["title"],
-                    data["course"],
-                    priority,
-                    data["time_remaining"]
-                )
+            # Avoid spamming the same reminder repeatedly
+            previous_priority = self.agent.last_sent.get(task_id)
+
+            if previous_priority != priority:
+                text = reminder_text(title, course, priority, time_remaining)
+
                 await self.send(build_message(
                     STUDENT_JID,
                     "inform",
                     "student_notice",
                     {"text": text}
                 ))
-                print(f"[ReminderAgent] Sent {priority} reminder for {task_id}")
+
+                print(f"[ReminderAgent] Reminder sent: {priority.upper()} reminder delivered for task {task_id}.")
                 self.agent.last_sent[task_id] = priority
 
     async def setup(self):

@@ -39,6 +39,8 @@ class StudentAgent(Agent):
     def __init__(self, jid, password):
         super().__init__(jid, password)
         self.pending_responses = {}
+        self.notifications = []
+        self.urgent_notifications = []
 
     class ReceiveBehaviour(CyclicBehaviour):
         async def run(self):
@@ -57,7 +59,27 @@ class StudentAgent(Agent):
                     self.agent.pending_responses[msg_type] = data
                     return
 
-                print(f"\n[StudentAgent] Notification received: {data.get('text', '')}")
+                text = data.get("text", "")
+                if text:
+                    self.agent.notifications.append(text)
+
+                    if "URGENT REMINDER" in text or "OVERDUE ALERT" in text:
+                        if text not in self.agent.urgent_notifications:
+                            self.agent.urgent_notifications.append(text)
+                    else:
+                        # If a completion notice comes in, remove matching urgent notices if possible
+                        if "has been marked as completed" in text or "No further reminders" in text:
+                            title = None
+                            if "'" in text:
+                                parts = text.split("'")
+                                if len(parts) >= 2:
+                                    title = parts[1]
+                            if title:
+                                self.agent.urgent_notifications = [
+                                    n for n in self.agent.urgent_notifications if title not in n
+                                ]
+
+                print(f"\n[StudentAgent] Notification received: {text}")
 
     class InteractiveMenuBehaviour(CyclicBehaviour):
         async def get_non_empty_input(self, prompt):
@@ -70,11 +92,11 @@ class StudentAgent(Agent):
 
         async def get_valid_main_menu_choice(self):
             while True:
-                choice = await asyncio.to_thread(input, "Enter your choice (1-4): ")
+                choice = await asyncio.to_thread(input, "Enter your choice (1-5): ")
                 choice = choice.strip()
-                if choice in {"1", "2", "3", "4"}:
+                if choice in {"1", "2", "3", "4", "5"}:
                     return choice
-                print("\n[StudentAgent] Invalid choice. Please enter a number from 1 to 4.\n")
+                print("\n[StudentAgent] Invalid choice. Please enter a number from 1 to 5.\n")
 
         async def get_valid_edit_menu_choice(self):
             while True:
@@ -160,6 +182,19 @@ class StudentAgent(Agent):
                     f"Due: {due_dt}"
                 )
             print("=================================================\n")
+
+        async def show_notifications(self):
+            if not self.agent.notifications:
+                print("\n================ NOTIFICATIONS =================")
+                print("There are currently no notifications.")
+                print("===============================================\n")
+                return
+
+            print("\n================ NOTIFICATIONS =================")
+            for index, note in enumerate(self.agent.notifications, start=1):
+                label = "URGENT" if note in self.agent.urgent_notifications else "GENERAL"
+                print(f"{index}. [{label}] {note}")
+            print("===============================================\n")
 
         async def prompt_for_existing_task_id(self, action_name):
             while True:
@@ -358,11 +393,17 @@ class StudentAgent(Agent):
         async def run(self):
             print("\n===================================================")
             print("ASSIGNMENT DEADLINE REMINDER SYSTEM")
+
+            urgent_count = len(self.agent.urgent_notifications)
+            if urgent_count > 0:
+                print(f"ALERT: You have {urgent_count} urgent task(s) to complete.")
+
             print("Choose an action:")
             print("1. Add a task")
             print("2. Edit a task")
             print("3. View tasks")
-            print("4. Exit simulation")
+            print("4. Notifications")
+            print("5. Exit simulation")
             print("===================================================\n")
 
             choice = await self.get_valid_main_menu_choice()
@@ -377,6 +418,9 @@ class StudentAgent(Agent):
                 await self.show_available_tasks()
 
             elif choice == "4":
+                await self.show_notifications()
+
+            elif choice == "5":
                 print("\n[System] Stopping all agents...")
 
                 for agent in self.agent.all_agents:

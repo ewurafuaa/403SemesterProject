@@ -21,7 +21,7 @@ class PriorityAgent(Agent):
             if msg_type == "task_data":
                 task = Task(**data)
                 priority = compute_priority(task)
-                print(f"[PriorityAgent] {task.title} priority = {priority}")
+                print(f"[PriorityAgent] Decision made: '{task.title}' is classified as {priority.upper()} priority.")
 
                 await self.send(build_message(
                     REMINDER_JID,
@@ -33,12 +33,14 @@ class PriorityAgent(Agent):
                         "course": task.course,
                         "priority": priority,
                         "status": task.status,
-                        "time_remaining": task.time_remaining()
+                        "time_remaining": task.time_remaining(),
+                        "difficulty": task.difficulty
                     }
                 ))
 
             elif msg_type == "all_tasks":
-                for item in data["tasks"]:
+                tasks = data.get("tasks", [])
+                for item in tasks:
                     task = Task(**item)
                     priority = compute_priority(task)
 
@@ -52,13 +54,19 @@ class PriorityAgent(Agent):
                             "course": task.course,
                             "priority": priority,
                             "status": task.status,
-                            "time_remaining": task.time_remaining()
+                            "time_remaining": task.time_remaining(),
+                            "difficulty": task.difficulty
                         }
                     ))
 
     class MonitorTimeBehaviour(CyclicBehaviour):
         async def run(self):
-            await self.send(build_message(TASK_JID, "inform", "request_all_tasks", {}))
+            await self.send(build_message(
+                TASK_JID,
+                "inform",
+                "request_all_tasks",
+                {}
+            ))
             await asyncio.sleep(5)
 
     async def setup(self):

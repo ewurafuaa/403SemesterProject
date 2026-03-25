@@ -129,10 +129,14 @@ class TaskAgent(Agent):
                 all_tasks = [task.__dict__ for task in self.agent.tasks.values()]
                 sender_jid = str(msg.sender).split("/")[0]
 
+                response_type = "all_tasks_response"
+                if "priority@" in sender_jid:
+                    response_type = "all_tasks"
+
                 await self.send(build_message(
                     sender_jid,
                     "inform",
-                    "all_tasks_response",
+                    response_type,
                     {"tasks": all_tasks}
                 ))
 

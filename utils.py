@@ -1,5 +1,4 @@
 import json
-import time
 from spade.message import Message
 
 
@@ -15,11 +14,36 @@ def parse_message(msg):
     return json.loads(msg.body) if msg.body else {}
 
 
+def format_time_remaining(seconds):
+    if seconds <= 0:
+        return "0 minutes"
+
+    days = int(seconds // 86400)
+    hours = int((seconds % 86400) // 3600)
+    minutes = int((seconds % 3600) // 60)
+
+    parts = []
+    if days > 0:
+        parts.append(f"{days} day{'s' if days != 1 else ''}")
+    if hours > 0:
+        parts.append(f"{hours} hour{'s' if hours != 1 else ''}")
+    if minutes > 0:
+        parts.append(f"{minutes} minute{'s' if minutes != 1 else ''}")
+
+    if not parts:
+        return "less than a minute"
+
+    if len(parts) == 1:
+        return parts[0]
+    if len(parts) == 2:
+        return f"{parts[0]} and {parts[1]}"
+    return f"{parts[0]}, {parts[1]}, and {parts[2]}"
+
+
 def compute_priority(task):
     remaining = task.time_remaining()
     difficulty = task.difficulty.strip().lower()
 
-    # Time thresholds in seconds
     SIX_HOURS = 6 * 60 * 60
     TWENTY_FOUR_HOURS = 24 * 60 * 60
     SEVEN_DAYS = 7 * 24 * 60 * 60
@@ -39,7 +63,6 @@ def compute_priority(task):
     if remaining <= SEVEN_DAYS:
         return "medium"
 
-    # Difficulty can slightly increase priority for distant tasks
     if difficulty == "high":
         return "medium"
 
@@ -47,12 +70,34 @@ def compute_priority(task):
 
 
 def reminder_text(title, course, priority, seconds_left):
+    remaining_text = format_time_remaining(seconds_left)
+
     if priority == "urgent":
-        return f"URGENT: {title} for {course} is due in {seconds_left:.0f} seconds."
+        return (
+            f"URGENT REMINDER: '{title}' for {course} is due in {remaining_text}. "
+            f"Please give it immediate attention."
+        )
+
     if priority == "high":
-        return f"Reminder: {title} for {course} is due soon."
+        return (
+            f"HIGH PRIORITY REMINDER: '{title}' for {course} is due in {remaining_text}. "
+            f"You should work on it soon."
+        )
+
     if priority == "medium":
-        return f"Gentle reminder: {title} for {course} is coming up."
+        return (
+            f"GENTLE REMINDER: '{title}' for {course} is due in {remaining_text}. "
+            f"It is being monitored by the system."
+        )
+
+    if priority == "low":
+        return (
+            f"NOTICE: '{title}' for {course} is scheduled and currently has low urgency."
+        )
+
     if priority == "overdue":
-        return f"OVERDUE: {title} for {course} has passed its deadline."
-    return f"{title} is being monitored."
+        return (
+            f"OVERDUE ALERT: '{title}' for {course} has passed its deadline."
+        )
+
+    return f"'{title}' is being monitored."
