@@ -60,7 +60,7 @@ pip install spade
 spade run
 ```
 
-### 7. Add a new terminal and activate the environment
+### 7. In a new terminal, activate the environment
 ```bash
 source .venv/bin/activate
 ```
