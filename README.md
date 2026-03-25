@@ -1,7 +1,5 @@
 # Assignment Deadline Reminder System
-
-## Overview
-The Intelligent Multi-Agent Assignment Deadline Reminder System (IMADRS) is a SPADE-based multi-agent system designed to help students effectively manage assignments and avoid missing deadlines. The system distributes responsibilities across specialized agents to ensure continuous monitoring, priority evaluation, and timely reminders.
+The Assignment Deadline Reminder System is an intelligent SPADE-based multi-agent system designed to help students effectively manage assignments and avoid missing deadlines. The system distributes responsibilities across specialized agents to ensure continuous monitoring, priority evaluation, and timely reminders.
 
 ## System Architecture
 The system consists of four cooperating agents:
@@ -34,8 +32,7 @@ The system consists of four cooperating agents:
 ## Setup Guide
 ### 1. Clone or download the project
 ```bash
-git clone <your-repo-url>
-cd IMADRS
+git clone https://github.com/ewurafuaa/403SemesterProject.git
 ```
 
 ### 2. Create a virtual environment
@@ -58,11 +55,23 @@ python -m pip install --upgrade pip
 pip install spade
 ```
 
-## Running the System
+### 6. Run spade
+```bash
+spade run
+```
+
+### 7. Add a new terminal and activate the environment
+```bash
+source .venv/bin/activate
+```
+
+### 8. Run the system
 Start the system with:
 ```bash
 python main.py
 ```
+
+---
 
 When the system starts, the following menu is displayed:
 1. Add a task
